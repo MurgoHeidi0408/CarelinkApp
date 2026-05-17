@@ -2,8 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserService {
 
-  final FirebaseFirestore firestore =
-      FirebaseFirestore.instance;
+  final usuarios =
+      FirebaseFirestore.instance
+          .collection('users');
+
+  //
+  // 🔥 GUARDAR USUARIO
+  //
 
   Future<void> guardarUsuario({
 
@@ -12,24 +17,61 @@ class UserService {
     required String nombre,
 
     required String email,
+
   }) async {
 
-    await firestore
-        .collection('users')
-        .doc(uid)
-        .set({
+    await usuarios.doc(uid).set({
+
+      'uid': uid,
 
       'nombre': nombre,
 
       'email': email,
 
-      'bio':
-      'Miembro de Carelink',
-
-      'ciudad':
-      'México',
-
       'photoUrl': '',
+
+      'bio': '',
+
+      'ciudad': '',
     });
+  }
+
+  //
+  // 🔥 OBTENER USUARIO
+  //
+
+  Stream<DocumentSnapshot> obtenerUsuario(
+      String uid,
+      ) {
+
+    return usuarios.doc(uid).snapshots();
+  }
+
+  //
+  // 🔥 ACTUALIZAR USUARIO
+  //
+
+  Future<void> actualizarUsuario({
+
+    required String uid,
+
+    required String nombre,
+
+    required String bio,
+
+    required String ciudad,
+
+    required String photoUrl,
+
+  }) async {
+
+    await usuarios.doc(uid).set({
+
+      'nombre': nombre,
+      'bio': bio,
+      'ciudad': ciudad,
+      'photoUrl': photoUrl,
+
+    }, SetOptions(merge: true));
   }
 }

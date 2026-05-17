@@ -1,446 +1,367 @@
+import 'package:carelink_app/publicar_screen.dart';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'hospitales_screen.dart';
+import 'seguridad_screen.dart';
+import 'recomendaciones_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
 
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5F5),
 
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
 
-            children: [
-
-              //
-              // 🔥 HEADER
-              //
-
-              Row(
-                children: [
-
-                  const CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Color(0xFFFF7A00),
-
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.white,
+                // ================= HEADER =================
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: const Color(0xFFFF7A00),
+                      backgroundImage: user?.photoURL != null
+                          ? NetworkImage(user!.photoURL!)
+                          : null,
+                      child: user?.photoURL == null
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
                     ),
-                  ),
 
-                  const SizedBox(width: 14),
+                    const SizedBox(width: 14),
 
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
-                      children: [
-
-                        Text(
-                          "Hola, Usuario 👋",
-
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Hola, ${user?.displayName ?? "Usuario"} 👋",
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-
-                        SizedBox(height: 4),
-
-                        Text(
-                          "Mantente informado sobre tu comunidad",
-
-                          style: TextStyle(
-                            color: Colors.grey,
+                          const SizedBox(height: 4),
+                          const Text(
+                            "Mantente informado sobre tu comunidad",
+                            style: TextStyle(color: Colors.grey),
                           ),
+                        ],
+                      ),
+                    ),
+
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.notifications_none),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 25),
+
+                // ================= BUSCADOR =================
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Buscar reportes o emergencias...",
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                const Text(
+                  "Accesos rápidos",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                // ================= GRID =================
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                  childAspectRatio: 1.2,
+                  children: [
+
+                    // 🟠 REPORTAR
+                    quickCard(
+                      Icons.warning_amber_rounded,
+                      "Reportar",
+                      const Color(0xFFFF7A00),
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PublicarScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    quickCard(
+                      Icons.lightbulb,
+                      "Recomendaciones",
+                      const Color(0xFFFF7A00),
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RecomendacionesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+  
+                    // 🏥 HOSPITALES
+                    quickCard(
+                      Icons.local_hospital,
+                      "Hospitales",
+                      Colors.blue,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HospitalesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // 🚨 SEGURIDAD
+                    quickCard(
+                      Icons.security,
+                      "Seguridad",
+                      Colors.green,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SeguridadScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+
+                const Text(
+                  "Actividad comunitaria",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                // ================= FEED =================
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection("posts")
+                      .orderBy("fecha", descending: true)
+                      .snapshots(),
+
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (!snapshot.hasData ||
+                        snapshot.data!.docs.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Center(
+                          child: Text("No hay publicaciones aún"),
                         ),
-                      ],
-                    ),
-                  ),
+                      );
+                    }
 
-                  Container(
-                    padding: const EdgeInsets.all(10),
+                    final posts = snapshot.data!.docs;
 
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius:
-                      BorderRadius.circular(14),
-                    ),
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: posts.length,
+                      itemBuilder: (context, index) {
+                        final data =
+                            posts[index].data() as Map<String, dynamic>;
 
-                    child: const Icon(
-                      Icons.notifications_none,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
-
-              //
-              // 🔥 BUSCADOR
-              //
-
-              TextField(
-                decoration: InputDecoration(
-
-                  hintText:
-                  "Buscar reportes o emergencias...",
-
-                  prefixIcon:
-                  const Icon(Icons.search),
-
-                  filled: true,
-                  fillColor: Colors.white,
-
-                  border: OutlineInputBorder(
-                    borderRadius:
-                    BorderRadius.circular(16),
-
-                    borderSide: BorderSide.none,
-                  ),
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: communityPost(
+                            data["nombre"] ?? "Usuario",
+                            data["mensaje"] ?? "",
+                            data["categoria"] ?? "",
+                            data["ubicacion"] ?? "",
+                            data["imageUrl"] ?? "",
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-              ),
 
-              const SizedBox(height: 28),
-
-              //
-              // 🔥 ACCESOS RÁPIDOS
-              //
-
-              const Text(
-                "Accesos rápidos",
-
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-
-                physics:
-                const NeverScrollableScrollPhysics(),
-
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-
-                childAspectRatio: 1.2,
-
-                children: [
-
-                  quickCard(
-                    Icons.warning_amber_rounded,
-                    "Reportar",
-                    const Color(0xFFFF7A00),
-                  ),
-
-                  quickCard(
-                    Icons.location_on,
-                    "Cercanos",
-                    Colors.redAccent,
-                  ),
-
-                  quickCard(
-                    Icons.local_hospital,
-                    "Hospitales",
-                    Colors.blue,
-                  ),
-
-                  quickCard(
-                    Icons.security,
-                    "Seguridad",
-                    Colors.green,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              //
-              // 🔥 ALERTAS
-              //
-
-              Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-
-                children: [
-
-                  const Text(
-                    "Alertas recientes",
-
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  TextButton(
-                    onPressed: () {},
-
-                    child: const Text(
-                      "Ver todas",
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              alertCard(
-                "Accidente vial",
-                "Choque fuerte en Av. Central",
-                Colors.red,
-              ),
-
-              const SizedBox(height: 14),
-
-              alertCard(
-                "Zona inundada",
-                "Evitar calle Morelos",
-                Colors.orange,
-              ),
-
-              const SizedBox(height: 30),
-
-              //
-              // 🔥 ACTIVIDAD
-              //
-
-              const Text(
-                "Actividad comunitaria",
-
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              communityPost(
-                "María González",
-                "¿La avenida principal ya fue despejada?",
-              ),
-
-              const SizedBox(height: 12),
-
-              communityPost(
-                "Carlos Ruiz",
-                "Hospital saturado en zona norte.",
-              ),
-
-              const SizedBox(height: 100),
-            ],
+                const SizedBox(height: 120),
+              ],
+            ),
           ),
         ),
 
         floatingActionButton: FloatingActionButton(
-          backgroundColor: const Color(0xFFFF7A00),
-
+          backgroundColor: const Color(0xFFFF7A07),
           onPressed: () {},
-
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-          ),
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
     );
   }
 
-  //
-  // 🔥 CARD RÁPIDA
-  //
-
+  // ================= QUICK CARD =================
   Widget quickCard(
-      IconData icon,
-      String title,
-      Color color,
-      ) {
+    IconData icon,
+    String title,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: color.withOpacity(0.15),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  // ================= POST =================
+  Widget communityPost(
+    String user,
+    String text,
+    String categoria,
+    String ubicacion,
+    String imageUrl,
+  ) {
     return Container(
       padding: const EdgeInsets.all(18),
-
       decoration: BoxDecoration(
         color: Colors.white,
-
-        borderRadius: BorderRadius.circular(22),
-
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
       ),
-
       child: Column(
-        mainAxisAlignment:
-        MainAxisAlignment.center,
-
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          CircleAvatar(
-            radius: 28,
-            backgroundColor:
-            color.withOpacity(0.15),
-
-            child: Icon(
-              icon,
-              color: color,
-              size: 28,
-            ),
+          Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: Color(0xFFFF7A07),
+                child: Icon(Icons.person, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      categoria,
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 14),
+          Text(text),
 
-          Text(
-            title,
-
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  //
-  // 🔥 ALERT CARD
-  //
-
-  Widget alertCard(
-      String title,
-      String subtitle,
-      Color color,
-      ) {
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-
-      child: Row(
-        children: [
-
-          CircleAvatar(
-            backgroundColor:
-            color.withOpacity(0.15),
-
-            child: Icon(
-              Icons.warning_amber_rounded,
-              color: color,
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-
+          if (ubicacion.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
               children: [
-
-                Text(
-                  title,
-
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 4),
-
-                Text(
-                  subtitle,
-
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
+                const Icon(Icons.location_on,
+                    size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(ubicacion,
+                    style: const TextStyle(color: Colors.grey)),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
+          ],
 
-  //
-  // 🔥 PUBLICACIÓN
-  //
-
-  Widget communityPost(
-      String user,
-      String text,
-      ) {
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-
-      child: Row(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-
-        children: [
-
-          const CircleAvatar(
-            backgroundColor:
-            Color(0xFFFF7A00),
-
-            child: Icon(
-              Icons.person,
-              color: Colors.white,
+          if (imageUrl.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.network(imageUrl),
             ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment.start,
-
-              children: [
-
-                Text(
-                  user,
-
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(text),
-              ],
-            ),
-          ),
+          ],
         ],
       ),
     );

@@ -2,17 +2,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class EditarPerfilScreen
-    extends StatefulWidget {
+import 'user_service.dart';
 
+class EditarPerfilScreen extends StatefulWidget {
   const EditarPerfilScreen({
     super.key,
   });
 
   @override
-  State<EditarPerfilScreen>
-  createState() =>
+  State<EditarPerfilScreen> createState() =>
       _EditarPerfilScreenState();
 }
 
@@ -20,30 +20,42 @@ class _EditarPerfilScreenState
     extends State<EditarPerfilScreen> {
 
   final nombreController =
-  TextEditingController();
+      TextEditingController();
 
   final bioController =
-  TextEditingController();
+      TextEditingController();
+
+  final ciudadController =
+      TextEditingController();
 
   File? image;
+
+  bool loading = false;
 
   //
   // 🔥 IMAGE PICKER
   //
 
   final ImagePicker picker =
-  ImagePicker();
+      ImagePicker();
 
   @override
   void initState() {
 
     super.initState();
 
+    //
+    // 🔥 USUARIO ACTUAL
+    //
+
+    final user =
+        FirebaseAuth.instance.currentUser;
+
     nombreController.text =
-    "Usuario";
+        user?.displayName ?? "";
 
     bioController.text =
-    "Usuario activo en la comunidad.";
+        "Usuario activo en la comunidad.";
   }
 
   //
@@ -69,6 +81,95 @@ class _EditarPerfilScreenState
         image = File(
           pickedFile.path,
         );
+      });
+    }
+  }
+
+  //
+  // 🔥 GUARDAR CAMBIOS
+  //
+
+  Future<void> guardarCambios() async {
+
+    final user =
+        FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    setState(() {
+      loading = true;
+    });
+
+    try {
+
+      //
+      // 🔥 ACTUALIZAR AUTH
+      //
+
+      await user.updateDisplayName(
+        nombreController.text.trim(),
+      );
+
+      //
+      // 🔥 ACTUALIZAR FIRESTORE
+      //
+
+      await UserService().actualizarUsuario(
+
+        uid: user.uid,
+
+        nombre:
+        nombreController.text.trim(),
+
+        bio:
+        bioController.text.trim(),
+
+        ciudad:
+        ciudadController.text.trim(),
+
+        photoUrl: "",
+      );
+
+      //
+      // 🔥 RECARGAR USUARIO
+      //
+
+      await user.reload();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+
+        const SnackBar(
+
+          content: Text(
+            "Perfil actualizado",
+          ),
+        ),
+      );
+
+      Navigator.pop(context);
+
+    } catch (e) {
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
+        SnackBar(
+
+          content: Text(
+            "Error: $e",
+          ),
+        ),
+      );
+    }
+
+    if (mounted) {
+
+      setState(() {
+        loading = false;
       });
     }
   }
@@ -143,9 +244,22 @@ class _EditarPerfilScreenState
                           image!,
                         )
 
-                            : const NetworkImage(
-                          "https://i.pravatar.cc/300",
-                        ) as ImageProvider,
+                            : null,
+
+                        child:
+
+                        image == null
+
+                            ? const Icon(
+
+                          Icons.person,
+
+                          size: 50,
+
+                          color: Colors.grey,
+                        )
+
+                            : null,
                       ),
 
                       Positioned(
@@ -271,6 +385,42 @@ class _EditarPerfilScreenState
                   ),
                 ),
 
+                const SizedBox(height: 20),
+
+                //
+                // 🔥 CIUDAD
+                //
+
+                TextField(
+
+                  controller:
+                  ciudadController,
+
+                  decoration:
+                  InputDecoration(
+
+                    labelText:
+                    "Ciudad",
+
+                    filled: true,
+
+                    fillColor:
+                    Colors.white,
+
+                    border:
+                    OutlineInputBorder(
+
+                      borderRadius:
+                      BorderRadius.circular(
+                        18,
+                      ),
+
+                      borderSide:
+                      BorderSide.none,
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 30),
 
                 //
@@ -283,24 +433,10 @@ class _EditarPerfilScreenState
 
                   child: ElevatedButton(
 
-                    onPressed: () {
-
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(
-
-                        const SnackBar(
-
-                          content: Text(
-                            "Perfil actualizado",
-                          ),
-                        ),
-                      );
-
-                      Navigator.pop(
-                        context,
-                      );
-                    },
+                    onPressed:
+                    loading
+                        ? null
+                        : guardarCambios,
 
                     style:
                     ElevatedButton.styleFrom(
@@ -325,7 +461,15 @@ class _EditarPerfilScreenState
                       ),
                     ),
 
-                    child: const Text(
+                    child:
+
+                    loading
+
+                        ? const CircularProgressIndicator(
+                      color: Colors.white,
+                    )
+
+                        : const Text(
 
                       "Guardar cambios",
 

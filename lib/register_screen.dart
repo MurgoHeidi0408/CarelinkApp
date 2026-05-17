@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'welcome_screen.dart';
+import 'user_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -225,10 +227,30 @@ class _AuthScreenState
         passwordController.text.trim(),
       );
 
+      //
+      // 🔥 GUARDAR NOMBRE
+      //
+
       await userCredential.user!
           .updateDisplayName(
 
         usernameController.text.trim(),
+      );
+
+      //
+      // 🔥 GUARDAR EN FIRESTORE
+      //
+
+      await UserService().guardarUsuario(
+
+        uid:
+        userCredential.user!.uid,
+
+        nombre:
+        usernameController.text.trim(),
+
+        email:
+        emailController.text.trim(),
       );
 
       if (!mounted) return;
@@ -569,10 +591,6 @@ class _AuthScreenState
                       child: Column(
                         children: [
 
-                          //
-                          // 🔥 USERNAME
-                          //
-
                           if (!esLogin) ...[
 
                             TextField(
@@ -594,10 +612,6 @@ class _AuthScreenState
                             const SizedBox(height: 18),
                           ],
 
-                          //
-                          // 🔥 EMAIL
-                          //
-
                           TextField(
 
                             controller:
@@ -615,10 +629,6 @@ class _AuthScreenState
                           ),
 
                           const SizedBox(height: 18),
-
-                          //
-                          // 🔥 PASSWORD
-                          //
 
                           TextField(
 
@@ -665,10 +675,6 @@ class _AuthScreenState
                               ),
                             ),
                           ),
-
-                          //
-                          // 🔥 CONFIRM PASSWORD
-                          //
 
                           if (!esLogin) ...[
 
@@ -722,10 +728,6 @@ class _AuthScreenState
                           ],
 
                           const SizedBox(height: 32),
-
-                          //
-                          // 🔥 BOTÓN
-                          //
 
                           SizedBox(
 
@@ -801,10 +803,6 @@ class _AuthScreenState
                           ),
 
                           const SizedBox(height: 20),
-
-                          //
-                          // 🔥 CAMBIAR
-                          //
 
                           TextButton(
 
