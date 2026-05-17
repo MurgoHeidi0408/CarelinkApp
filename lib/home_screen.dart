@@ -2,9 +2,12 @@ import 'package:carelink_app/publicar_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'hospitales_screen.dart';
 import 'seguridad_screen.dart';
 import 'recomendaciones_screen.dart';
+import 'notificaciones_screen.dart'; // 👈 IMPORTANTE
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -31,6 +34,7 @@ class HomeScreen extends StatelessWidget {
                 // ================= HEADER =================
                 Row(
                   children: [
+
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: const Color(0xFFFF7A00),
@@ -64,13 +68,25 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
+                    // 🔥 NOTIFICACIONES CON NAVEGACIÓN
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const notificacionesScreen(),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(Icons.notifications_none),
                       ),
-                      child: const Icon(Icons.notifications_none),
                     ),
                   ],
                 ),
@@ -113,11 +129,10 @@ class HomeScreen extends StatelessWidget {
                   childAspectRatio: 1.2,
                   children: [
 
-                    // 🟠 REPORTAR
                     quickCard(
                       Icons.warning_amber_rounded,
                       "Reportar",
-                      const Color(0xFFFF7A00),
+                      const Color(0xFFFF7A07),
                       () {
                         Navigator.push(
                           context,
@@ -127,22 +142,21 @@ class HomeScreen extends StatelessWidget {
                         );
                       },
                     ),
+
                     quickCard(
                       Icons.lightbulb,
                       "Recomendaciones",
-                      const Color(0xFFFF7A00),
+                      const Color(0xFFFF7A07),
                       () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => RecomendacionesScreen(),
+                            builder: (_) => const RecomendacionesScreen(),
                           ),
                         );
                       },
                     ),
 
-  
-                    // 🏥 HOSPITALES
                     quickCard(
                       Icons.local_hospital,
                       "Hospitales",
@@ -157,7 +171,6 @@ class HomeScreen extends StatelessWidget {
                       },
                     ),
 
-                    // 🚨 SEGURIDAD
                     quickCard(
                       Icons.security,
                       "Seguridad",

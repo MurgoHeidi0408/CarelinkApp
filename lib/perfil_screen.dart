@@ -1,11 +1,12 @@
+import 'package:carelink_app/notificaciones_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'editar_perfil_screen.dart';
 import 'register_screen.dart';
 import 'user_service.dart';
-
+import 'ayuda_screen.dart';
+import 'privacidad_screen.dart';
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
 
@@ -215,17 +216,40 @@ class PerfilScreen extends StatelessWidget {
                         optionTile(
                           icon: Icons.notifications,
                           title: "Notificaciones",
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const notificacionesScreen()
+                                ),
+                            );
+                          }
+                            
+
                         ),
                         optionTile(
                           icon: Icons.lock,
                           title: "Privacidad",
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const privacidadScreen()
+                                ),
+                              );
+                          },
                         ),
                         optionTile(
                           icon: Icons.help_outline,
                           title: "Ayuda",
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                               context,
+                               MaterialPageRoute(
+                                 builder: (_) => const ayudaScreen(),
+                               ),
+                            );
+                          },
                         ),
                         optionTile(
                           icon: Icons.logout,
