@@ -9,7 +9,7 @@ class SeguridadScreen extends StatelessWidget {
   Future<void> llamarEmergencia(
       BuildContext context, String numero) async {
 
-    final hasVibrator = await Vibration.hasVibrator() ?? false;
+    final hasVibrator = await Vibration.hasVibrator() ;
 
     if (hasVibrator) {
       Vibration.vibrate(duration: 120);
